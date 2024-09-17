@@ -5,7 +5,8 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class NewChatResponse {
+public class ChatUser {
 
-    private final Boolean successful;
+    private final Long userId;
+    private final String userName;
 }

@@ -1,37 +1,46 @@
 package com.capecoders.coop.chat;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
+
+import com.capecoders.coop.chat.addnewchat.AddNewChat;
+import com.capecoders.coop.chat.addnewchat.NewChatRequest;
+import com.capecoders.coop.chat.addnewchat.NewChatResponse;
+import com.capecoders.coop.events.UserAddedEvent;
 
 public class ChatModuleTests {
 
     @Test
-    public void newChat_shouldReturnFailureMessage_whenCannotSend() {
-        TestChatAdaptor adaptor = new TestChatAdaptor(false);
-        ChatService service = new ChatService(adaptor);
-
-        NewChatRequest request = new NewChatRequest(
-            1L, 2L, "this is a message"
-        );
-
-        NewChatResponse response = service.newChat(request);
-
-        assertFalse(response.getSuccessful());
+    public void aNewChat_shouldThrowANoUserError_whenNoUsersFoundForRequest() {
+        assertThrows(RuntimeException.class, () -> {
+            InMemoryChatUsersRepo repo = new InMemoryChatUsersRepo();
+            AddNewChat thing = new AddNewChat(repo);
+            NewChatRequest request = new NewChatRequest(1L, singletonList(1L));
+            thing.execute(request);
+        });
     }
 
     @Test
-    public void newChat_shouldReturnSuccessMessage_whenCanSend() {
-        TestChatAdaptor adaptor = new TestChatAdaptor(true);
-        ChatService service = new ChatService(adaptor);
+    public void aNewChat_shouldReturnANewChat_whenValidUserFoundForRequest_andNoPreviousChat() {
+        InMemoryChatUsersRepo repo = new InMemoryChatUsersRepo();
+        new UserAddedEventListener(repo).userAdded(new UserAddedEvent(1L, "Chatty Kathy"));
 
-        NewChatRequest request = new NewChatRequest(
-            1L, 2L, "this is a message"
-        );
+        AddNewChat thing = new AddNewChat(repo);
+        NewChatRequest request = new NewChatRequest(1L, singletonList(1L));
+        NewChatResponse response = thing.execute(request);
 
-        NewChatResponse response = service.newChat(request);
+        assertNotNull(response.getChatId());
+        assertEquals(singletonList(1L), response.getUsersInChat());
+        assertEquals(emptyList(), response.getMessages());
+    }
 
-        assertTrue(response.getSuccessful());
+    @Test
+    public void aNewChat_shouldReturnPreviousChat_whenValidUserFoundForRequest_andThereAlreadyIsAPreviousChat() {
+
     }
 }
