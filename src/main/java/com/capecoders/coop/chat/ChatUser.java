@@ -1,12 +1,17 @@
 package com.capecoders.coop.chat;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Entity
 @AllArgsConstructor
+@NoArgsConstructor
 public class ChatUser {
-
-    private final Long userId;
-    private final String userName;
+    @Id
+    private Long userId;
+    private String userName;
 }

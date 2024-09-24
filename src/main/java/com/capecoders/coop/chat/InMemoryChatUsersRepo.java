@@ -9,7 +9,7 @@ public class InMemoryChatUsersRepo implements ChatUsersRepo {
 
     @Override
     public Optional<ChatUser> findUserByUserId(Long userId) {
-        return data.stream().findFirst();
+        return data.stream().filter(x -> x.getUserId().equals(userId)).findFirst();
     }
 
     @Override
