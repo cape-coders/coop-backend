@@ -11,7 +11,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.ArrayList;
@@ -35,7 +34,7 @@ public class ChatIntegrationTests {
     private AddNewChat service;
 
     @Test
-    @WithMockUser(username = "user", roles = {"USER"})
+//    @WithMockUser(username = "user", roles = {"USER"})
     void postToChatShouldCallAddNewChatService() throws Exception {
         when(service.execute(any())).thenReturn(new NewChatResponse(
             1L, singletonList(1L), new ArrayList<>()

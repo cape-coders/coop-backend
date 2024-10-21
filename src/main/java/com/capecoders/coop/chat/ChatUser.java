@@ -14,4 +14,9 @@ public class ChatUser {
     @Id
     private Long userId;
     private String userName;
+    private Boolean connectedToWebsockets;
+
+    public void userHasConnectedToWS() {
+        connectedToWebsockets = true;
+    }
 }

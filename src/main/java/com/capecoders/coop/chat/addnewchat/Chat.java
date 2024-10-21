@@ -1,5 +1,6 @@
 package com.capecoders.coop.chat.addnewchat;
 
+import com.capecoders.coop.chat.sendmessage.SendMessageRequest;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -27,4 +28,10 @@ public class Chat {
         return chat;
     }
 
+    public void sendMessage(SendMessageRequest request) {
+        if (!users.contains(request.getSenderId())) {
+            throw new IllegalArgumentException("Sender is not part of the chat");
+        }
+        this.messages.add(request.getMessage());
+    }
 }

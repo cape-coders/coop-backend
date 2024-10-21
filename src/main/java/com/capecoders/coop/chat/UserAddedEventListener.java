@@ -17,8 +17,8 @@ public class UserAddedEventListener {
         this.userAdded(new UserAddedEvent(1L, "test user"));
     }
 
-    public void userAdded(UserAddedEvent event) {
-        repo.save(new ChatUser(event.getUserId(), event.getUserName()));
+    public ChatUser userAdded(UserAddedEvent event) {
+        return repo.save(new ChatUser(event.getUserId(), event.getUserName(), false));
     }
 
 }

@@ -1,12 +1,10 @@
 package com.capecoders.coop.chat.addnewchat;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Optional;
-
 import com.capecoders.coop.chat.ChatUser;
 import com.capecoders.coop.chat.ChatUsersRepo;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 public class AddNewChat {

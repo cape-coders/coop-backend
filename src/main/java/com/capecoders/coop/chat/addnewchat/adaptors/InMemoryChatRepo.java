@@ -1,4 +1,7 @@
-package com.capecoders.coop.chat.addnewchat;
+package com.capecoders.coop.chat.addnewchat.adaptors;
+
+import com.capecoders.coop.chat.addnewchat.Chat;
+import com.capecoders.coop.chat.addnewchat.ChatRepo;
 
 import java.util.ArrayList;
 import java.util.List;
