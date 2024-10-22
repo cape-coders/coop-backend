@@ -39,7 +39,7 @@
                 reconnectAttempts = 0;
                 
                 // Subscribe to user-specific messages
-                stompClient.subscribe('/user/queue/messages', function (message) {
+                stompClient.subscribe('/user/chat/messages', function (message) {
                     showMessage(message.body);
                 });
             }, function (error) {
