@@ -27,7 +27,7 @@ public class SecurityConfig {
                      c.configurationSource(corsConfigurationSource());
                 })
                 .authorizeHttpRequests((requests) -> requests
-                        .requestMatchers("/websocket-endpoint/**", "/login").permitAll()
+                        .requestMatchers( "/login").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(AbstractAuthenticationFilterConfigurer::permitAll)
