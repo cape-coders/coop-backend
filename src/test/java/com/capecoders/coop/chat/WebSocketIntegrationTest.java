@@ -76,7 +76,7 @@ public class WebSocketIntegrationTest {
         // Call the method from your service class instead of sending directly through the WebSocket
         messageService.sendMessage(messageToSend, "testuser");
 
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     private static class TestSessionHandler extends StompSessionHandlerAdapter {

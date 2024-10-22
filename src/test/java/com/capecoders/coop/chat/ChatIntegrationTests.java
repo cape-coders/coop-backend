@@ -4,6 +4,7 @@ import com.capecoders.coop.SecurityConfig;
 import com.capecoders.coop.chat.addnewchat.AddNewChat;
 import com.capecoders.coop.chat.addnewchat.NewChatRequest;
 import com.capecoders.coop.chat.addnewchat.NewChatResponse;
+import com.capecoders.coop.chat.sendmessage.SendMessageToChat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.ArrayList;
@@ -32,9 +34,11 @@ public class ChatIntegrationTests {
     private ObjectMapper objectMapper;
     @MockBean
     private AddNewChat service;
+    @MockBean
+    private SendMessageToChat sendMessageToChat;
 
     @Test
-//    @WithMockUser(username = "user", roles = {"USER"})
+    @WithMockUser(username = "testuser", roles = {"USER"})
     void postToChatShouldCallAddNewChatService() throws Exception {
         when(service.execute(any())).thenReturn(new NewChatResponse(
             1L, singletonList(1L), new ArrayList<>()
@@ -54,7 +58,7 @@ public class ChatIntegrationTests {
     }
 
     @Test
-//    @WithMockUser(username = "user", roles = {"USER"})
+    @WithMockUser(username = "testuser", roles = {"USER"})
     void postToChatShouldHandleWhenAddNEwUserThrows() throws Exception {
         when(service.execute(any())).thenThrow(new RuntimeException("No users exist pal"));
 

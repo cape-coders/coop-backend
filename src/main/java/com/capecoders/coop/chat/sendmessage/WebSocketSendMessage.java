@@ -1,12 +1,7 @@
 package com.capecoders.coop.chat.sendmessage;
 
-import org.springframework.messaging.handler.annotation.DestinationVariable;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-
-import java.security.Principal;
 
 @Service
 public class WebSocketSendMessage implements SendMessageInterface {

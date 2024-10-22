@@ -20,14 +20,10 @@ import org.springframework.web.socket.messaging.SessionConnectedEvent;
 public class ChatController {
     private final AddNewChat addNewChat;
     private final SendMessageToChat sendMessageToChat;
-    private final ChatUsersRepo chatUsersRepo;
-    private final SendMessageInterface sendMessageInterface;
 
-    public ChatController(AddNewChat addNewChat, SendMessageToChat sendMessageToChat, ChatUsersRepo chatUsersRepo, SendMessageInterface sendMessageInterface) {
+    public ChatController(AddNewChat addNewChat, SendMessageToChat sendMessageToChat) {
         this.addNewChat = addNewChat;
         this.sendMessageToChat = sendMessageToChat;
-        this.chatUsersRepo = chatUsersRepo;
-        this.sendMessageInterface = sendMessageInterface;
     }
 
     @MessageMapping("/user/{userToSendTo}/{chatId}")
@@ -46,23 +42,4 @@ public class ChatController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-    @GetMapping(path = "/sendchat/{userId}/{message}")
-    public ResponseEntity<?> sendChat(@PathVariable String userId, @PathVariable String message) {
-        try {
-            sendMessageInterface.sendMessage(message, userId);
-            return new ResponseEntity<>("Message sent", HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-
-
-    @EventListener
-    public void handleWebSocketConnectedListener(SessionConnectedEvent event) {
-        StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
-        System.out.println("Connected: " + headerAccessor.getSessionId());
-    }
-
 }
