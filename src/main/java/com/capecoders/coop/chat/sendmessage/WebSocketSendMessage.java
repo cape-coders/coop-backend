@@ -6,19 +6,20 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-@Service
-public class WebSocketSendMessage implements SendMessageInterface{
-    private final SimpMessagingTemplate messagingTemplate;
+import java.security.Principal;
 
+@Service
+public class WebSocketSendMessage implements SendMessageInterface {
+    private final SimpMessagingTemplate messagingTemplate;
 
     public WebSocketSendMessage(SimpMessagingTemplate messagingTemplate) {
         this.messagingTemplate = messagingTemplate;
     }
 
     @Override
-    public void sendMessage(String message, Long userToSendTo) {
-        messagingTemplate.convertAndSend("/user/"+userToSendTo, message);
+    public void sendMessage(String message, String userToSendTo) {
+
+        System.out.println("Sending message to user: " + userToSendTo + " -> " + message);
+        messagingTemplate.convertAndSendToUser(userToSendTo, "/chat/messages", message);
     }
-
-
 }

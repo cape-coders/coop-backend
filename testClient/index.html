@@ -1,0 +1,76 @@
+// A simple JavaScript WebSocket client app using SockJS and Stomp.js to connect to your Spring WebSocket endpoint with Basic Authentication
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test Client</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+    <h1>WebSocket Test Client</h1>
+    <button onclick="connect()">Login and Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+    <button onclick="sendMessage()">Send Message</button>
+    <div id="messages"></div>
+
+    <script>
+        let stompClient = null;
+        let reconnectAttempts = 0;
+
+        function connect() {
+            const username = 'testuser';
+            const password = 'password';
+            const headers = {
+                Authorization: 'Basic ' + btoa(username + ':' + password)
+            };
+            
+            const socket = new SockJS('http://localhost:8080/websocket-endpoint'); // Update port as per your Spring Boot app
+            stompClient = Stomp.over(socket);
+
+            // Configure heartbeats to keep the connection alive
+            stompClient.heartbeat.outgoing = 20000; // send heartbeat every 20 seconds
+            stompClient.heartbeat.incoming = 20000; // expect heartbeat every 20 seconds
+
+            stompClient.connect(headers, function (frame) {
+                console.log('Connected: ' + frame);
+                reconnectAttempts = 0;
+                
+                // Subscribe to user-specific messages
+                stompClient.subscribe('/user/queue/messages', function (message) {
+                    showMessage(message.body);
+                });
+            }, function (error) {
+                console.error('Error connecting: ' + error);
+                reconnectAttempts++;
+                setTimeout(connect, Math.min(5000, reconnectAttempts * 1000)); // Reconnect with exponential backoff
+            });
+        }
+
+        function disconnect() {
+            if (stompClient !== null) {
+                stompClient.disconnect();
+            }
+            console.log("Disconnected");
+        }
+
+        function sendMessage() {
+            if (stompClient && stompClient.connected) {
+                const message = "Test message from client";
+                stompClient.send("/app/chat", {}, JSON.stringify({ 'content': message }));
+            } else {
+                console.log("Cannot send message, not connected");
+            }
+        }
+
+        function showMessage(message) {
+            const messagesDiv = document.getElementById("messages");
+            const messageElement = document.createElement("div");
+            messageElement.textContent = message;
+            messagesDiv.appendChild(messageElement);
+        }
+    </script>
+</body>
+</html>

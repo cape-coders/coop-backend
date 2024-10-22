@@ -30,7 +30,7 @@ public class SendMessageToChat {
             Optional<ChatUser> userByUserId = chatUsersRepo.findUserByUserId(userId);
             userByUserId.ifPresent(user -> {
                 if (user.getConnectedToWebsockets()) {
-                    sendMessageInterface.sendMessage(request.getMessage(), userId);
+                    sendMessageInterface.sendMessage(request.getMessage(), userId.toString());
                 }
             });
 

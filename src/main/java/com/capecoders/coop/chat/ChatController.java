@@ -3,6 +3,7 @@ package com.capecoders.coop.chat;
 import com.capecoders.coop.chat.addnewchat.AddNewChat;
 import com.capecoders.coop.chat.addnewchat.NewChatRequest;
 import com.capecoders.coop.chat.addnewchat.NewChatResponse;
+import com.capecoders.coop.chat.sendmessage.SendMessageInterface;
 import com.capecoders.coop.chat.sendmessage.SendMessageRequest;
 import com.capecoders.coop.chat.sendmessage.SendMessageToChat;
 import org.springframework.context.event.EventListener;
@@ -11,13 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
-
-import java.util.Arrays;
 
 @RestController
 @CrossOrigin
@@ -25,11 +21,13 @@ public class ChatController {
     private final AddNewChat addNewChat;
     private final SendMessageToChat sendMessageToChat;
     private final ChatUsersRepo chatUsersRepo;
+    private final SendMessageInterface sendMessageInterface;
 
-    public ChatController(AddNewChat addNewChat, SendMessageToChat sendMessageToChat, ChatUsersRepo chatUsersRepo) {
+    public ChatController(AddNewChat addNewChat, SendMessageToChat sendMessageToChat, ChatUsersRepo chatUsersRepo, SendMessageInterface sendMessageInterface) {
         this.addNewChat = addNewChat;
         this.sendMessageToChat = sendMessageToChat;
         this.chatUsersRepo = chatUsersRepo;
+        this.sendMessageInterface = sendMessageInterface;
     }
 
     @MessageMapping("/user/{userToSendTo}/{chatId}")
@@ -49,13 +47,22 @@ public class ChatController {
         }
     }
 
+    @GetMapping(path = "/sendchat/{userId}/{message}")
+    public ResponseEntity<?> sendChat(@PathVariable String userId, @PathVariable String message) {
+        try {
+            sendMessageInterface.sendMessage(message, userId);
+            return new ResponseEntity<>("Message sent", HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+
     @EventListener
     public void handleWebSocketConnectedListener(SessionConnectedEvent event) {
         StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
-        String userId = headerAccessor.getFirstNativeHeader("userId"); // Retrieve userId from headers
-        if (userId != null) {
-
-            System.out.println("User connected: " + userId);
-        }
+        System.out.println("Connected: " + headerAccessor.getSessionId());
     }
+
 }
