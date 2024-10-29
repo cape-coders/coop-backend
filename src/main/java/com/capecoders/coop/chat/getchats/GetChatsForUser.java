@@ -2,7 +2,6 @@ package com.capecoders.coop.chat.getchats;
 
 import com.capecoders.coop.chat.addnewchat.ChatRepo;
 import com.capecoders.coop.chat.addnewchat.NewChatResponse;
-import com.capecoders.coop.chat.addnewchat.adaptors.InMemoryChatRepo;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;

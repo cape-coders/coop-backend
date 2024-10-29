@@ -30,7 +30,7 @@ public class SecurityConfig {
                         .requestMatchers( "/login").permitAll()
                         .anyRequest().authenticated()
                 )
-                .formLogin(AbstractAuthenticationFilterConfigurer::permitAll)
+//                .formLogin(AbstractAuthenticationFilterConfigurer::permitAll)
                 .logout(LogoutConfigurer::permitAll)
                 .httpBasic(x -> x.init(http))
                 .csrf(AbstractHttpConfigurer::disable);

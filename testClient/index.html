@@ -1,5 +1,3 @@
-// A simple JavaScript WebSocket client app using SockJS and Stomp.js to connect to your Spring WebSocket endpoint with Basic Authentication
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,8 +36,8 @@
                 console.log('Connected: ' + frame);
                 reconnectAttempts = 0;
                 
-                // Subscribe to user-specific messages
-                stompClient.subscribe('/user/chat/messages', function (message) {
+                // Subscribe to coopUser-specific messages
+                stompClient.subscribe('/coopUser/chat/messages', function (message) {
                     showMessage(message.body);
                 });
             }, function (error) {
