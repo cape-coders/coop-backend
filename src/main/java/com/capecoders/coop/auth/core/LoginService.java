@@ -6,6 +6,7 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 
 @Service
@@ -26,12 +27,12 @@ public class LoginService {
     }
 
     private String createJwt(String email) {
-        Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256); // Generates a secure random key for HMAC-SHA256
+        Key key = Keys.hmacShaKeyFor("secretkeyisverysecretIpromise!!!".getBytes(StandardCharsets.UTF_8));
 
         return Jwts.builder()
             .setSubject(email)        // Set a subject
 //            .claim("role", "admin")    // Add custom claims
-//            .signWith(key)             // Sign with the generated key
+            .signWith(key)             // Sign with the generated key
             .compact();                // Build the JWT
     }
 }

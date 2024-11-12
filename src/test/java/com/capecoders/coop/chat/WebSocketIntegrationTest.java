@@ -1,6 +1,7 @@
 package com.capecoders.coop.chat;
 
 import com.capecoders.coop.auth.core.DefaultAdminService;
+import com.capecoders.coop.auth.core.LoginService;
 import com.capecoders.coop.chat.sendmessage.SendMessageInterface;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ public class WebSocketIntegrationTest {
     @Autowired
     private SendMessageInterface messageService; // Inject your service class here
     @Autowired
-    private DefaultAdminService defaultAdminService;
+    private LoginService loginService;
 
     private StompSession stompSession;
 
@@ -48,10 +49,8 @@ public class WebSocketIntegrationTest {
 
         // Set up Basic Authentication headers
         WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
-        String auth = "wow@wow.com:test123!";
-        byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes());
-        String authHeader = "Basic " + new String(encodedAuth);
-        headers.add("Authorization", authHeader);
+        String login = loginService.login("wow@wow.com", "test123!");
+        headers.add("Authorization", "Bearer " + login);
 
         StompSessionHandler sessionHandler = new TestSessionHandler();
         stompSession = stompClient.connect(webSocketUrl, headers, sessionHandler).get(1, TimeUnit.SECONDS);

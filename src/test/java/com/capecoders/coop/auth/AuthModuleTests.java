@@ -7,6 +7,7 @@ import com.capecoders.coop.auth.core.LoginService;
 import com.capecoders.coop.auth.core.UserRepo;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Header;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwt;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,9 +72,5 @@ public class AuthModuleTests {
         new DefaultAdminService(userRepo, passwordEncoder, email, "12345678!!!");
         String token = new LoginService(userRepo, passwordEncoder).login("someone@wow.com", password);
         assertNull(token);
-    }
-
-    private Jwt<Header, Claims> isParsableJwt(String token) {
-        return testJwtValidator.isParsableJwt(token);
     }
 }

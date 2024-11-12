@@ -46,7 +46,6 @@ public class AuthIntegrationTests {
         String jwtToken = result.getResponse().getContentAsString();
 
         // Use the TestJwtValidator to check if the JWT is parsable
-        Jwt<Header, Claims> parsableJwt = jwtValidator.isParsableJwt(jwtToken);
-        assertNotNull(parsableJwt, "The JWT token should be parsable");
+        assertNotNull(jwtValidator.isParsableJwt(jwtToken), "The JWT token should be parsable");
     }
 }
