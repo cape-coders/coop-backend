@@ -5,10 +5,10 @@ import com.capecoders.coop.auth.core.CoopUser;
 import com.capecoders.coop.auth.core.DefaultAdminService;
 import com.capecoders.coop.auth.core.LoginService;
 import com.capecoders.coop.auth.core.UserRepo;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Header;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.Jwt;
+import com.capecoders.coop.auth.core.sendinvite.InviteUserService;
+import com.capecoders.coop.auth.core.sendinvite.TestSendUserInviteEmail;
+import com.capecoders.coop.auth.core.sendinvite.TestUserInviteRepo;
+import com.capecoders.coop.auth.core.sendinvite.UserInvite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -72,5 +72,38 @@ public class AuthModuleTests {
         new DefaultAdminService(userRepo, passwordEncoder, email, "12345678!!!");
         String token = new LoginService(userRepo, passwordEncoder).login("someone@wow.com", password);
         assertNull(token);
+    }
+
+    @Test
+    public void shouldBeAbleToInviteANewUser() {
+        TestSendUserInviteEmail testSendUserInviteEmail = new TestSendUserInviteEmail(true);
+        TestUserInviteRepo testUserInviteRepo = new TestUserInviteRepo();
+        UserInvite userInvite = testUserInviteRepo.getByEmail("test@wow.com");
+        assertNull(userInvite);
+        Boolean didItSend = new InviteUserService(testSendUserInviteEmail, testUserInviteRepo).invite("test@wow.com");
+        assertTrue(didItSend);
+        UserInvite userInviteAfterInvite = testUserInviteRepo.getByEmail("test@wow.com");
+        assertNotNull(userInviteAfterInvite);
+        assertNotNull(userInviteAfterInvite.getId());
+        assertNotNull(userInviteAfterInvite.getCode());
+        assertEquals("test@wow.com", userInviteAfterInvite.getEmail());
+    }
+
+    @Test
+    public void shouldReturnFalseIfCouldNotSendEmail() {
+        TestSendUserInviteEmail testSendUserInviteEmail = new TestSendUserInviteEmail(false);
+        TestUserInviteRepo testUserInviteRepo = new TestUserInviteRepo();
+        Boolean didItSend = new InviteUserService(testSendUserInviteEmail, testUserInviteRepo).invite("test@wow.com");
+        assertFalse(didItSend);
+        assertNull(testUserInviteRepo.getByEmail("test@wow.com"));
+    }
+
+    @Test
+    public void shouldOnlySaveInviteOncePerEmail() {
+        TestSendUserInviteEmail testSendUserInviteEmail = new TestSendUserInviteEmail(true);
+        TestUserInviteRepo testUserInviteRepo = new TestUserInviteRepo();
+        new InviteUserService(testSendUserInviteEmail, testUserInviteRepo).invite("test@wow.com");
+        new InviteUserService(testSendUserInviteEmail, testUserInviteRepo).invite("test@wow.com");
+        testUserInviteRepo.emailExistsOnlyOnce("test@wow.com");
     }
 }
