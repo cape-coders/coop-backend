@@ -1,5 +1,6 @@
 package com.capecoders.coop.chat;
 
+import com.capecoders.coop.auth.core.DefaultAdminService;
 import com.capecoders.coop.chat.sendmessage.SendMessageInterface;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,8 +32,11 @@ public class WebSocketIntegrationTest {
 
     @Autowired
     private SendMessageInterface messageService; // Inject your service class here
+    @Autowired
+    private DefaultAdminService defaultAdminService;
 
     private StompSession stompSession;
+
 
     @BeforeEach
     void setup() throws Exception {
@@ -44,7 +48,7 @@ public class WebSocketIntegrationTest {
 
         // Set up Basic Authentication headers
         WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
-        String auth = "testuser:password";
+        String auth = "wow@wow.com:test123!";
         byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes());
         String authHeader = "Basic " + new String(encodedAuth);
         headers.add("Authorization", authHeader);
@@ -54,7 +58,7 @@ public class WebSocketIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = {"USER"})
+    @WithMockUser(username = "wow@wow.com", roles = {"USER"})
     void shouldReceiveMessageFromServer() throws InterruptedException {
         String destination = "/user/chat/messages";
         String messageToSend = "Test message";
@@ -74,7 +78,7 @@ public class WebSocketIntegrationTest {
         });
 
         // Call the method from your service class instead of sending directly through the WebSocket
-        messageService.sendMessage(messageToSend, "testuser");
+        messageService.sendMessage(messageToSend, "wow@wow.com");
 
         assertTrue(latch.await(20, TimeUnit.SECONDS));
     }
