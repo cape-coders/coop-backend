@@ -2,6 +2,8 @@ package com.capecoders.coop.auth.core.sendinvite;
 
 import com.capecoders.coop.auth.core.CoopUser;
 import com.capecoders.coop.auth.core.UserRepo;
+import com.capecoders.coop.events.EventPublisher;
+import com.capecoders.coop.events.UserAddedEvent;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -13,12 +15,14 @@ public class InviteUserService {
     private final UserInviteRepo userInviteRepo;
     private final UserRepo userRepo;
     private final PasswordEncoder passwordEncoder;
+    private final EventPublisher eventPublisher;
 
-    public InviteUserService(SendUserInviteEmail sendUserInviteEmail, UserInviteRepo userInviteRepo, UserRepo userRepo, PasswordEncoder passwordEncoder) {
+    public InviteUserService(SendUserInviteEmail sendUserInviteEmail, UserInviteRepo userInviteRepo, UserRepo userRepo, PasswordEncoder passwordEncoder, EventPublisher eventPublisher) {
         this.sendUserInviteEmail = sendUserInviteEmail;
         this.userInviteRepo = userInviteRepo;
         this.userRepo = userRepo;
         this.passwordEncoder = passwordEncoder;
+        this.eventPublisher = eventPublisher;
     }
 
     public SendUserInviteResponse invite(String emailAddress) {
@@ -54,7 +58,10 @@ public class InviteUserService {
             throw new InvalidPassword();
         }
 
-        userRepo.saveUser(new CoopUser(null, email, passwordEncoder.encode(password)));
+        CoopUser coopUser = userRepo.saveUser(new CoopUser(null, email, passwordEncoder.encode(password)));
+        if (coopUser != null) {
+            eventPublisher.publish(new UserAddedEvent(coopUser.getId(), coopUser.getEmail()));
+        }
 
     }
 

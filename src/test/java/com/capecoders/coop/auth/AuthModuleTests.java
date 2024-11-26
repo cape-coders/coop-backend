@@ -6,6 +6,8 @@ import com.capecoders.coop.auth.core.DefaultAdminService;
 import com.capecoders.coop.auth.core.LoginService;
 import com.capecoders.coop.auth.core.UserRepo;
 import com.capecoders.coop.auth.core.sendinvite.*;
+import com.capecoders.coop.events.TestEventPublisher;
+import com.capecoders.coop.events.UserAddedEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -88,12 +90,14 @@ public class AuthModuleTests {
         private LoginService loginService;
         private TestUserInviteRepo userInviteRepo;
         private TestSendUserInviteEmail sendUserInviteEmail;
+        private TestEventPublisher eventPublisher;
         @BeforeEach
         public void setUp() {
+            eventPublisher = new TestEventPublisher();
             sendUserInviteEmail = new TestSendUserInviteEmail();
             userInviteRepo = new TestUserInviteRepo();
             loginService = new LoginService(userRepo, passwordEncoder);
-            inviteUserService = new InviteUserService(sendUserInviteEmail, userInviteRepo, userRepo, passwordEncoder);
+            inviteUserService = new InviteUserService(sendUserInviteEmail, userInviteRepo, userRepo, passwordEncoder, eventPublisher);
         }
         @Test
         public void invitingAUser_sendsThatUserAnEmailWithALinkToJoin() {
@@ -145,6 +149,13 @@ public class AuthModuleTests {
             assertThrows(InviteUserService.AlreadyExistsException.class, () -> {
                 inviteUserService.invite("test@wow.com");
             });
+        }
+
+        @Test
+        public void acceptingInviteShouldBroadcastUserAddedEvent() {
+            SendUserInviteResponse inviteResponse = inviteUserService.invite("test@wow.com");
+            inviteUserService.accept("test@wow.com", "password", inviteResponse.code());
+            assertTrue(eventPublisher.eventWasPublished(UserAddedEvent.class));
         }
 
     }

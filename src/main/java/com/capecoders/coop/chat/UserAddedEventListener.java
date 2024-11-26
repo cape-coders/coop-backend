@@ -2,6 +2,7 @@ package com.capecoders.coop.chat;
 
 import com.capecoders.coop.events.UserAddedEvent;
 import jakarta.annotation.PostConstruct;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,11 +13,8 @@ public class UserAddedEventListener {
         this.repo = repo;
     }
 
-    @PostConstruct
-    public void addFakeData() {
-        this.userAdded(new UserAddedEvent(1L, "test user"));
-    }
 
+    @EventListener
     public ChatUser userAdded(UserAddedEvent event) {
         return repo.save(new ChatUser(event.getUserId(), event.getUserName(), false));
     }
