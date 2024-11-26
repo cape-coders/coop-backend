@@ -1,6 +1,5 @@
 package com.capecoders.coop.chat;
 
-import com.capecoders.coop.auth.core.DefaultAdminService;
 import com.capecoders.coop.auth.core.LoginService;
 import com.capecoders.coop.chat.sendmessage.SendMessageInterface;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.lang.NonNull;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.simp.stomp.*;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -18,7 +18,6 @@ import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 import java.lang.reflect.Type;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -53,7 +52,7 @@ public class WebSocketIntegrationTest {
         headers.add("Authorization", "Bearer " + login);
 
         StompSessionHandler sessionHandler = new TestSessionHandler();
-        stompSession = stompClient.connect(webSocketUrl, headers, sessionHandler).get(1, TimeUnit.SECONDS);
+        stompSession = stompClient.connectAsync(webSocketUrl, headers, sessionHandler).get(10, TimeUnit.SECONDS);
     }
 
     @Test
@@ -61,35 +60,35 @@ public class WebSocketIntegrationTest {
     void shouldReceiveMessageFromServer() throws InterruptedException {
         String destination = "/user/chat/messages";
         String messageToSend = "Test message";
-        CountDownLatch latch = new CountDownLatch(1);
+        CountDownLatch messageLatch = new CountDownLatch(1);
 
         stompSession.subscribe(destination, new StompFrameHandler() {
             @Override
-            public Type getPayloadType(StompHeaders stompHeaders) {
+            public Type getPayloadType(StompHeaders headers) {
                 return String.class;
             }
 
             @Override
-            public void handleFrame(StompHeaders stompHeaders, Object payload) {
+            public void handleFrame(StompHeaders headers, Object payload) {
                 assertEquals(messageToSend, payload);
-                latch.countDown();
+                messageLatch.countDown(); // Signal that the message was received
             }
         });
+        Thread.sleep(250);
 
-        // Call the method from your service class instead of sending directly through the WebSocket
         messageService.sendMessage(messageToSend, "wow@wow.com");
 
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        assertTrue(messageLatch.await(10, TimeUnit.SECONDS), "Message was not received in time");
     }
 
     private static class TestSessionHandler extends StompSessionHandlerAdapter {
         @Override
-        public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
+        public void afterConnected(@NonNull StompSession session, @NonNull StompHeaders connectedHeaders) {
             // Handle post connection activities
         }
 
         @Override
-        public void handleException(StompSession session, StompCommand command, StompHeaders headers, byte[] payload, Throwable exception) {
+        public void handleException(@NonNull StompSession session, StompCommand command, @NonNull StompHeaders headers, @NonNull byte[] payload, @NonNull Throwable exception) {
             throw new RuntimeException(exception);
         }
     }

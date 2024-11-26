@@ -1,9 +1,6 @@
 package com.capecoders.coop.auth;
 
 import com.capecoders.coop.auth.core.LoginService;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Header;
-import io.jsonwebtoken.Jwt;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -47,5 +44,20 @@ public class AuthIntegrationTests {
 
         // Use the TestJwtValidator to check if the JWT is parsable
         assertNotNull(jwtValidator.isParsableJwt(jwtToken), "The JWT token should be parsable");
+    }
+
+    @Test
+    public void shouldBeAbleToInviteUser() throws Exception {
+        String invitePayload = "{ \"email\": \"test@wow.com\" }";
+
+
+        String jwt = loginService.login("wow@wow.com", "12345678!!!");
+        mockMvc.perform(post("/invite")
+            .header("Authorization", "Bearer " + jwt)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(invitePayload)
+        ).andExpect(status().isOk());
+
+
     }
 }

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class TestUserInviteRepo implements UserInviteRepo {
-    private List<UserInvite> data = new ArrayList<>(){};
+    private final List<UserInvite> data = new ArrayList<>(){};
     @Override
     public UserInvite getByEmail(String email) {
         return data.stream().filter(x -> x.getEmail().equals(email)).findFirst().orElse(null);

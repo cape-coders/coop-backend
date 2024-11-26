@@ -1,14 +1,34 @@
 package com.capecoders.coop.auth.core.sendinvite;
 
-public class TestSendUserInviteEmail implements SendUserInviteEmail{
-    private final Boolean returnValue;
+import org.springframework.stereotype.Component;
 
-    public TestSendUserInviteEmail(Boolean returnValue) {
-        this.returnValue = returnValue;
+@Component
+public class TestSendUserInviteEmail implements SendUserInviteEmail{
+    private Boolean returnValue;
+    private SendUserInviteRequest request;
+
+    public TestSendUserInviteEmail() {
+        this.makeSuccess();
     }
 
     @Override
-    public Boolean sendEmail() {
+    public Boolean sendEmail(SendUserInviteRequest request) {
+        this.request = request;
         return returnValue;
     }
+
+    public void makeFail() {
+        this.returnValue = false;
+    }
+
+    public void makeSuccess() {
+        this.returnValue = true;
+    }
+
+
+    public  SendUserInviteRequest emailSent() {
+        return this.request;
+    }
+
+
 }

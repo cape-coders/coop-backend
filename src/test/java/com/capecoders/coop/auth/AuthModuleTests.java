@@ -5,12 +5,13 @@ import com.capecoders.coop.auth.core.CoopUser;
 import com.capecoders.coop.auth.core.DefaultAdminService;
 import com.capecoders.coop.auth.core.LoginService;
 import com.capecoders.coop.auth.core.UserRepo;
-import com.capecoders.coop.auth.core.sendinvite.InviteUserService;
-import com.capecoders.coop.auth.core.sendinvite.TestSendUserInviteEmail;
-import com.capecoders.coop.auth.core.sendinvite.TestUserInviteRepo;
-import com.capecoders.coop.auth.core.sendinvite.UserInvite;
+import com.capecoders.coop.auth.core.sendinvite.*;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -22,88 +23,132 @@ import static org.junit.jupiter.api.Assertions.*;
 public class AuthModuleTests {
     private final TestJwtValidator testJwtValidator = new TestJwtValidator();
     private UserRepo userRepo;
-    private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     @BeforeEach
     public void setUp() {
         userRepo = new InMemoryUserRepo();
     }
-    @Test
-    public void createAdminUser_onStartup_whenAdminCredentialsAvailable() {
-        String email = "wow@wow.com";
-        new DefaultAdminService(userRepo, passwordEncoder, email, "12345678!!!");
-        List<CoopUser> allCoopUsers = userRepo.getAllUsers();
-        assertFalse(allCoopUsers.isEmpty());
-        assertEquals(email, allCoopUsers.get(0).getEmail());
+
+
+    @Nested
+    class DefaultAdmin {
+        @Test
+        public void createAdminUser_onStartup_whenAdminCredentialsAvailable() {
+            String email = "wow@wow.com";
+            new DefaultAdminService(userRepo, passwordEncoder, email, "12345678!!!");
+            List<CoopUser> allCoopUsers = userRepo.getAllUsers();
+            assertFalse(allCoopUsers.isEmpty());
+            assertEquals(email, allCoopUsers.get(0).getEmail());
+        }
+
+        @Test
+        public void createAdminUser_onStartup_shouldNotRecreateAdminUser() {
+            String email = "wow@wow.com";
+            String password = "12345678!!!";
+            userRepo.saveUser(new CoopUser(null, email, password));
+            new DefaultAdminService(userRepo, passwordEncoder, email, password);
+            List<CoopUser> allCoopUsers = userRepo.getAllUsers();
+            assertEquals(1, allCoopUsers.size());
+        }
+
+        @Test
+        public void defaultAdminIsAbleToLogin() {
+            String email = "wow@wow.com";
+            String password = "12345678!!!";
+            new DefaultAdminService(userRepo, passwordEncoder, email, password);
+            String token = new LoginService(userRepo, passwordEncoder).login(email, password);
+            assertNotNull(token);
+
+            assertEquals(email, Objects.requireNonNull(testJwtValidator.isParsableJwt(token)).getBody().getSubject());
+        }
+
+        @Test
+        public void defaultAdminIsNotAbleToLoginWithAWrongPassword() {
+            String email = "wow@wow.com";
+            String password = "notMyPasswordNotMyProblem";
+            new DefaultAdminService(userRepo, passwordEncoder, email, "12345678!!!");
+            String token = new LoginService(userRepo, passwordEncoder).login(email, password);
+            assertNull(token);
+        }
+        @Test
+        public void shouldNotBeAbleToLoginWithNonExistingUser() {
+            String email = "wow@wow.com";
+            String password = "notMyPasswordNotMyProblem";
+            new DefaultAdminService(userRepo, passwordEncoder, email, "12345678!!!");
+            String token = new LoginService(userRepo, passwordEncoder).login("someone@wow.com", password);
+            assertNull(token);
+        }
     }
 
-    @Test
-    public void createAdminUser_onStartup_shouldNotRecreateAdminUser() {
-        String email = "wow@wow.com";
-        String password = "12345678!!!";
-        userRepo.saveUser(new CoopUser(null, email, password));
-        new DefaultAdminService(userRepo, passwordEncoder, email, password);
-        List<CoopUser> allCoopUsers = userRepo.getAllUsers();
-        assertEquals(1, allCoopUsers.size());
+
+
+    @Nested
+    class UserInviteAcceptInvite {
+        private InviteUserService inviteUserService;
+        private LoginService loginService;
+        private TestUserInviteRepo userInviteRepo;
+        private TestSendUserInviteEmail sendUserInviteEmail;
+        @BeforeEach
+        public void setUp() {
+            sendUserInviteEmail = new TestSendUserInviteEmail();
+            userInviteRepo = new TestUserInviteRepo();
+            loginService = new LoginService(userRepo, passwordEncoder);
+            inviteUserService = new InviteUserService(sendUserInviteEmail, userInviteRepo, userRepo, passwordEncoder);
+        }
+        @Test
+        public void invitingAUser_sendsThatUserAnEmailWithALinkToJoin() {
+            inviteUserService.invite("test@wow.com");
+            assertEquals("test@wow.com", sendUserInviteEmail.emailSent().email());
+            assertTrue(sendUserInviteEmail.emailSent().inviteLink().contains("http://localhost:8080/accept-invite?code="));
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"notTheRealCode"})
+        @NullAndEmptySource
+        public void cannotAcceptInviteWithWrongCode(String aBadCode) {
+            inviteUserService.invite("test@wow.com");
+            assertThrows(InviteUserService.BadCodeException.class, () -> {
+                inviteUserService.accept("test@wow.com", "password", aBadCode);
+            });
+        }
+
+        @Test
+        public void cannotAcceptInviteWithValidCodeBadWrongEmail() {
+            SendUserInviteResponse invite = inviteUserService.invite("test@wow.com");
+            assertThrows(InviteUserService.WrongEmailException.class, () -> {
+                inviteUserService.accept("someHacker@badpeople.com", "password", invite.code());
+            });
+        }
+
+        @ParameterizedTest
+        @NullAndEmptySource
+        public void cannotAcceptInviteWithValidEmailButMissingPassword(String password) {
+            SendUserInviteResponse invite = inviteUserService.invite("test@wow.com");
+            assertThrows(InviteUserService.InvalidPassword.class, () -> {
+                inviteUserService.accept(invite.email(), password, invite.code());
+            });
+        }
+
+        @Test
+        public void canLoginAfterAcceptingInvite() {
+            SendUserInviteResponse inviteResponse = inviteUserService.invite("test@wow.com");
+            inviteUserService.accept("test@wow.com", "password", inviteResponse.code());
+            String jwt = loginService.login("test@wow.com", "password");
+            assertNotNull(jwt);
+            assertEquals("test@wow.com", Objects.requireNonNull(testJwtValidator.isParsableJwt(jwt)).getBody().getSubject());
+        }
+
+        @Test
+        public void shouldNotBeAbleToInviteExistingUser() {
+            SendUserInviteResponse invite = inviteUserService.invite("test@wow.com");
+            inviteUserService.accept(invite.email(), "password", invite.code());
+            assertThrows(InviteUserService.AlreadyExistsException.class, () -> {
+                inviteUserService.invite("test@wow.com");
+            });
+        }
+
     }
 
-    @Test
-    public void defaultAdminIsAbleToLogin() {
-        String email = "wow@wow.com";
-        String password = "12345678!!!";
-        new DefaultAdminService(userRepo, passwordEncoder, email, password);
-        String token = new LoginService(userRepo, passwordEncoder).login(email, password);
-        assertNotNull(token);
 
-        assertEquals(email, Objects.requireNonNull(testJwtValidator.isParsableJwt(token)).getBody().getSubject());
-    }
-
-    @Test
-    public void defaultAdminIsNotAbleToLoginWithAWrongPassword() {
-        String email = "wow@wow.com";
-        String password = "notMyPasswordNotMyProblem";
-        new DefaultAdminService(userRepo, passwordEncoder, email, "12345678!!!");
-        String token = new LoginService(userRepo, passwordEncoder).login(email, password);
-        assertNull(token);
-    }
-    @Test
-    public void shouldNotBeAbleToLoginWithNonExistingUser() {
-        String email = "wow@wow.com";
-        String password = "notMyPasswordNotMyProblem";
-        new DefaultAdminService(userRepo, passwordEncoder, email, "12345678!!!");
-        String token = new LoginService(userRepo, passwordEncoder).login("someone@wow.com", password);
-        assertNull(token);
-    }
-
-    @Test
-    public void shouldBeAbleToInviteANewUser() {
-        TestSendUserInviteEmail testSendUserInviteEmail = new TestSendUserInviteEmail(true);
-        TestUserInviteRepo testUserInviteRepo = new TestUserInviteRepo();
-        UserInvite userInvite = testUserInviteRepo.getByEmail("test@wow.com");
-        assertNull(userInvite);
-        Boolean didItSend = new InviteUserService(testSendUserInviteEmail, testUserInviteRepo).invite("test@wow.com");
-        assertTrue(didItSend);
-        UserInvite userInviteAfterInvite = testUserInviteRepo.getByEmail("test@wow.com");
-        assertNotNull(userInviteAfterInvite);
-        assertNotNull(userInviteAfterInvite.getId());
-        assertNotNull(userInviteAfterInvite.getCode());
-        assertEquals("test@wow.com", userInviteAfterInvite.getEmail());
-    }
-
-    @Test
-    public void shouldReturnFalseIfCouldNotSendEmail() {
-        TestSendUserInviteEmail testSendUserInviteEmail = new TestSendUserInviteEmail(false);
-        TestUserInviteRepo testUserInviteRepo = new TestUserInviteRepo();
-        Boolean didItSend = new InviteUserService(testSendUserInviteEmail, testUserInviteRepo).invite("test@wow.com");
-        assertFalse(didItSend);
-        assertNull(testUserInviteRepo.getByEmail("test@wow.com"));
-    }
-
-    @Test
-    public void shouldOnlySaveInviteOncePerEmail() {
-        TestSendUserInviteEmail testSendUserInviteEmail = new TestSendUserInviteEmail(true);
-        TestUserInviteRepo testUserInviteRepo = new TestUserInviteRepo();
-        new InviteUserService(testSendUserInviteEmail, testUserInviteRepo).invite("test@wow.com");
-        new InviteUserService(testSendUserInviteEmail, testUserInviteRepo).invite("test@wow.com");
-        testUserInviteRepo.emailExistsOnlyOnce("test@wow.com");
-    }
+//    should do what with email if can't send out
 }
